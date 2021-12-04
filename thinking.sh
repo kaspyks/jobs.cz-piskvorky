@@ -5,376 +5,280 @@ function checkSquare {
 	y="${2}"
 	pID="${3}"
 	debug "########## Check: ${x}, ${y}, ${pID}"
-	if [[ "${pID}" == "${uID}" ]]
+
+
+	################################################################
+	for t in "hor" "ver" "oblbot" "obltop"
+	do
+		hG1=$( hit "g" "1" )
+		hG2=$( hit "g" "2" )
+		hG3=$( hit "g" "3" )
+		hGN1=$( hit "g" "-1" )
+		hGN2=$( hit "g" "-2" )
+		hGN3=$( hit "g" "-3" )
+		hGN4=$( hit "g" "-4" )
+		if [[ "${hGN1}" == "${pID}" && "${hG1}" == "${pID}" ]]
+		then
+			if [[ -z "${hG2}" && "${hG3}" == "${pID}" ]]; then debug "${t}.1"
+				if [[ "${pID}" == "${uID}" ]]
+				then
+					hit "i" "2" "50000"
+				else
+					hit "i" "2" "10000"
+				fi
+			fi
+			if [[ -z "${hGN2}" && "${hGN3}" == "${pID}" ]]; then debug "${t}.2"
+				if [[ "${pID}" == "${uID}" ]]
+				then
+					hit "i" "-2" "50000"
+				else
+					hit "i" "-2" "10000"
+				fi
+			fi
+			if [[ "${hG2}" == "${pID}" ]]
+			then
+				if [[ -z "${hGN2}" && -z "${hG3}" ]]; then debug "${t}.3"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-2" "50000"
+						hit "i" "3" "50000"
+					fi
+				fi
+				if [[ -z "${hG3}" && ( -n "${hGN2}" && "${hGN2}" != "${pID}" ) ]]; then debug "${t}.5"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "3" "50000"
+					else
+						hit "i" "3" "10000"
+					fi
+				fi
+				if [[ -z "${hGN2}" && ( -n "${hG3}" && "${hG3}" != "${pID}" ) ]]; then debug "${t}.6"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-2" "50000"
+					else
+						hit "i" "-2" "10000"
+					fi
+				fi
+			fi
+			if [[ "${hGN2}" == "${pID}" ]]
+			then
+				if [[ -z "${hGN3}" && -z "${hG2}" ]]; then debug "${t}.4"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "2" "50000"
+						hit "i" "-3" "50000"
+					fi
+				fi
+				if [[ -z "${hG2}" && ( -n "${hGN3}" && "${hGN3}" != "${pID}" ) ]]; then debug "${t}.7"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "2" "50000"
+					else
+						hit "i" "2" "10000"
+					fi
+				fi
+				if [[ -z "${hGN3}" && ( -n "${hG2}" && "${hG2}" != "${pID}" ) ]]; then debug "${t}.8"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-3" "50000"
+					else
+						hit "i" "-3" "10000"
+					fi
+				fi
+			fi
+			if [[ -z "${hG2}" && -z "${hGN2}" ]]; then debug "${t}.11"
+				if [[ "${pID}" == "${uID}" ]]
+				then
+					if [[ -z "${hG3}" ]]
+					then
+						hit "i" "2" "2000"
+					else
+						hit "i" "2" "1970"
+					fi
+					if [[ -z "${hGN3}" ]]
+					then
+						hit "i" "-2" "2000"
+					else
+						hit "i" "-2" "1970"
+					fi
+				else
+					if [[ -z "${hG3}" ]]
+					then
+						hit "i" "2" "1000"
+					else
+						hit "i" "2" "970"
+					fi
+					if [[ -z "${hGN3}" ]]
+					then
+						hit "i" "-2" "1000"
+					else
+						hit "i" "-2" "970"
+					fi
+				fi
+			fi
+			if [[ -z "${hG2}" && -z "${hG3}" && ( -n "${hGN2}" && "${hGN2}" != "${pID}" ) ]]; then debug "${t}.12"
+				if [[ "${pID}" == "${uID}" ]]
+				then
+					hit "i" "2" "400"
+					hit "i" "3" "400"
+				else
+					hit "i" "2" "300"
+					hit "i" "3" "300"
+				fi
+			fi
+			if [[ -z "${hGN2}" && -z "${hGN3}" && ( -n "${hG2}" && "${hG2}" != "${pID}" ) ]]; then debug "${t}.13"
+				if [[ "${pID}" == "${uID}" ]]
+				then
+					hit "i" "-2" "400"
+					hit "i" "-3" "400"
+				else
+					hit "i" "-2" "300"
+					hit "i" "-3" "300"
+				fi
+			fi
+		fi
+		if [[ "${hGN1}" == "${pID}" ]]
+		then
+			if [[ -z "${hG1}" && "${hG2}" == "${pID}" ]]
+			then
+				if [[ "${hG3}" == "${pID}" ]]; then debug "${t}.10"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "1" "50000"
+					else
+						hit "i" "1" "10000"
+					fi
+				fi
+				if [[ -z "${hGN2}" && -z "${hG3}" ]]; then debug "${t}.15"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-2" "350"
+						hit "i" "3" "300"
+						hit "i" "1" "2000"
+					else
+						hit "i" "-2" "450"
+						hit "i" "3" "400"
+						hit "i" "1" "1000"
+					fi
+				fi
+				if [[ -z "${hG3}" && ( -n "${hGN2}" && "${hGN2}" != "${pID}" ) ]]; then debug "${t}.16"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "3" "300"
+						hit "i" "1" "150"
+					else
+						hit "i" "3" "400"
+						hit "i" "1" "250"
+					fi
+				fi
+				if [[ -z "${hGN2}" && ( -n "${hG3}" && "${hG3}" != "${pID}" ) ]]; then debug "${t}.17"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-2" "350"
+						hit "i" "1" "250"
+					else
+						hit "i" "-2" "450"
+						hit "i" "1" "350"
+					fi
+				fi
+			fi
+			if [[ -z "${hGN2}" && "${hGN3}" == "${pID}" ]]
+			then
+				if [[ -z "${hG1}" && -z "${hGN4}" ]]; then debug "${t}.19"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-2" "2000"
+						hit "i" "-4" "300"
+						hit "i" "1" "350"
+					else
+						hit "i" "-2" "1000"
+						hit "i" "-4" "400"
+						hit "i" "1" "450"
+					fi
+				fi
+				if [[ -z "${hGN4}" && ( -n "${hG1}" && "${hG1}" != "${pID}" ) ]]; then debug "${t}.20"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-2" "150"
+						hit "i" "-4" "300"
+					else
+						hit "i" "-2" "250"
+						hit "i" "-4" "400"
+					fi
+				fi
+				if [[ -z "${hG1}" && ( -n "${hGN4}" && "${hGN4}" != "${pID}" ) ]]; then debug "${t}.21"
+					if [[ "${pID}" == "${uID}" ]]
+					then
+						hit "i" "-2" "250"
+						hit "i" "1" "350"
+					else
+						hit "i" "-2" "350"
+						hit "i" "1" "450"
+					fi
+				fi
+			fi
+
+		fi
+		if [[ -z "${hGN1}" && "${hGN2}" == "${pID}" && -z "${hGN3}" && -z "${hG1}" ]]; then debug "${t}.25"
+			hit "i" "-1" "50"
+			hit "i" "-3" "40"
+			hit "i" "1" "40"
+		fi
+	done
+	
+	######################################################################
+}
+
+function chooseTheBest {
+	res=$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y FROM nextHitsView WHERE s = ( SELECT MAX(s) FROM nextHitsView );" )
+	if [[ $( echo "${res}" | wc -l ) -eq 1 ]]
 	then
-		p2="2"
-		p3="5" # priority by 3 in row
-		p4="625" # priority by 4 in row
+		nHX=$( echo "${res}" | cut -d "|" -f 1 )
+		nHY=$( echo "${res}" | cut -d "|" -f 2 )
 	else
-		p2="1"
-		p3="25" # priority by 3 in row
-		p4="125" # priority by 4 in row
+		debug "### Running The Best Choice"
+		sqlite3 "${tmpFolder}/${gID}.db" "DELETE FROM theBest;"
+		echo "${res}" | while read line
+		do
+			x=$( echo "${line}" | cut -d "|" -f 1 )
+			y=$( echo "${line}" | cut -d "|" -f 2 )
+			score=0
+			for t in "hor" "ver" "oblbot" "obltop"
+			do
+				aPID=""
+				for i in 1 2 3 4 -1 -2 -3 -4
+				do
+					if [[ "${i}" -eq -1 ]]; then aPID=""; fi
+					h=$( hit "g" "${i}" )
+					if [[ -z "${h}" ]]
+					then
+						continue
+					else
+						if [[ -z "${aPID}" ]]
+						then
+							aPID="${h}"
+							score=$(( score + 1 ))
+						else
+							if [[ "${aPID}" == "${h}" ]]
+							then
+								score=$(( score + 1 ))
+							else
+								break
+							fi
+						fi
+					fi
+				done
+			done
+			sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO theBest ( x, y, p ) VALUES ( '${x}', '${y}', '${score}' );"
+		done
+		debug "########## The Best, ze kteryho vybiram:"
+		debug "$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y, p FROM theBest;" )"
+		debug "########## The Best konec prehledu"
+		line=$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y FROM theBest WHERE p = ( SELECT MAX(p) FROM theBest ) ORDER BY RANDOM() LIMIT 1;" )
+		nHX=$( echo "${line}" | cut -d "|" -f 1 )
+		nHY=$( echo "${line}" | cut -d "|" -f 2 )
 	fi
-	p32=$(( p3 + p3 )) # priority by 3 in row When empty fields around
-	
-	##########################################################
-	if [[ -z $( getData $(( x - 1 )) "${y}" ) && $( getData $(( x - 2 )) "${y}" ) == "${pID}" ]]
-	then
-		debug "1.0"
-		insertData $(( x - 1 )) "${y}" "${p2}"
-	fi
-	if [[ $( getData $(( x - 1 )) "${y}" ) == "${pID}" ]] # if 2 in row
-	then
-		debug "1.1"
-		t="hor" # hor, ver, oblbot, obltop
-		insertData $(( x + 1 )) "${y}" "${p2}"
-		insertData $(( x - 2 )) "${y}" "${p2}"
-		if [[ -z $( getData $(( x + 1 )) "${y}" ) && $( getData $(( x + 2 )) "${y}" ) == "${pID}" ]]
-		then
-			if [[ $( getData $(( x + 3 )) "${y}" ) == "${pID}" ]]
-			then
-				debug "1.1.2.1"
-				insertData $(( x + 1 )) "${y}" "${p4}"
-			else
-				debug "1.1.2.2"
-				insertData $(( x - 2 )) "${y}" $(( p3 - 1 ))
-				insertData $(( x + 3 )) "${y}" $(( p3 - 1 ))
-				if [[ -z $( getData $(( x - 2 )) "${y}" ) && -z $( getData $(( x + 3 )) "${y}" ) ]]
-				then
-					debug "1.1.3.1"
-					insertData $(( x + 1 )) "${y}" "${p32}"
-				else
-					debug "1.1.3.2"
-					insertData $(( x + 1 )) "${y}" "${p3}"
-				fi					
-			fi
-		fi
-		if [[ -z $( getData $(( x - 2 )) "${y}" ) && $( getData $(( x - 3 )) "${y}" ) == "${pID}" ]]
-		then
-			insertData $(( x - 4 )) "${y}" $(( p3 - 1 ))
-			insertData $(( x + 1 )) "${y}" $(( p3 - 1 ))
-			if [[ -z $( getData $(( x - 4 )) "${y}" ) && -z $( getData $(( x + 1 )) "${y}" ) ]]
-			then
-				debug "1.1.4.1"
-				insertData $(( x - 2 )) "${y}" "${p32}"
-			else
-				debug "1.1.4.2"
-				insertData $(( x - 2 )) "${y}" "${p3}"
-			fi
-		fi
-		
-		if [[ $( getData $(( x + 1 )) "${y}" ) == "${pID}" ]] # if 3 in row
-		then
-			debug "1.2"
-			p3s=""
-			if [[ -z $( getData $(( x + 2 )) "${y}" ) && -z $( getData $(( x - 2 )) "${y}" ) ]]
-			then
-				p3s="${p32}"
-			else
-				p3s="${p3}"
-				if [[ -z $( getData $(( x + 2 )) "${y}" ) ]]
-				then
-					insertData $(( x + 3 )) "${y}" $(( p3 - 1 ))
-				fi
-				if [[ -z $( getData $(( x - 2 )) "${y}" ) ]]
-				then
-					insertData $(( x - 3 )) "${y}" $(( p3 - 1 ))
-				fi
-			fi
-			
-			if [[ -z $( getData $(( x + 2 )) "${y}" ) && $( getData $(( x + 3 )) "${y}" ) == "${pID}" ]]
-			then
-				debug "1.2.1"
-				insertData $(( x + 2 )) "${y}" "${p4}"
-			else
-				debug "1.2.2"
-				insertData $(( x + 2 )) "${y}" "${p3s}"
-			fi
-			if [[ -z $( getData $(( x - 2 )) "${y}" ) && $( getData $(( x - 3 )) "${y}" ) == "${pID}" ]]
-			then
-				debug "1.2.3"
-				insertData $(( x - 2 )) "${y}" "${p4}"
-			else
-				debug "1.2.4"
-				insertData $(( x - 2 )) "${y}" "${p3s}"
-			fi
-			if [[ $( getData $(( x + 2 )) "${y}" ) == "${pID}" ]]
-			then
-				debug "1.2.5"
-				insertData $(( x + 3 )) "${y}" "${p4}"
-				insertData $(( x - 2 )) "${y}" "${p4}"
-			fi
-			if [[ $( getData $(( x - 2 )) "${y}" ) == "${pID}" ]]
-			then
-				debug "1.2.6"
-				insertData $(( x - 3 )) "${y}" "${p4}"
-				insertData $(( x + 2 )) "${y}" "${p4}"
-			fi
-		fi
-	fi
-	##########################################################
-	if [[ -z $( getData "${x}" $(( y - 1 )) ) && $( getData "${x}" $(( y - 2 )) ) == "${pID}" ]]
-	then
-		debug "2.0"
-		insertData "${x}" $(( y - 1 )) "${p2}"
-	fi
-	if [[ $( getData "${x}" $(( y - 1 )) ) == "${pID}" ]] # if 2 in row
-	then
-		debug "2.1"
-		t="ver" # hor, ver, oblbot, obltop
-		insertData "${x}" $(( y + 1 )) "${p2}"
-		insertData "${x}" $(( y - 2 )) "${p2}"
-		if [[ -z $( getData "${x}" $(( y + 1 )) ) && $( getData "${x}" $(( y + 2 )) ) == "${pID}" ]]
-		then			
-			if [[ $( getData "${x}" $(( y + 3 )) ) == "${pID}" ]]
-			then
-				insertData "${x}" $(( y + 1 )) "${p4}"
-			else
-				insertData "${x}" $(( y - 2 )) $(( p3 - 1 ))
-				insertData "${x}" $(( y + 3 )) $(( p3 - 1 ))
-				if [[ -z $( getData "${x}" $(( y - 2 )) ) && -z $( getData "${x}" $(( y + 3 )) ) ]]
-				then
-					debug "2.1.3.1"
-					insertData "${x}" $(( y + 1 )) "${p32}"
-				else
-					debug "2.1.3.2"
-					insertData "${x}" $(( y + 1 )) "${p3}"
-				fi
-			fi
-		fi
-		if [[ -z $( getData "${x}" $(( y - 2 )) ) && $( getData "${x}" $(( y - 3 )) ) == "${pID}" ]]
-		then
-			insertData "${x}" $(( y - 4 )) $(( p3 - 1 ))
-			insertData "${x}" $(( y + 1 )) $(( p3 - 1 ))
-			if [[ -z $( getData "${x}" $(( y - 4 )) ) && -z $( getData "${x}" $(( y + 1 )) ) ]]
-			then
-				debug "2.1.4.1"
-				insertData "${x}" $(( y - 2 )) "${p32}"
-			else
-				debug "2.1.4.2"
-				insertData "${x}" $(( y - 2 )) "${p3}"
-			fi
-		fi
-	
-		if [[ $( getData "${x}" $(( y + 1 )) ) == "${pID}" ]] # if 3 in row
-		then
-			debug "2.2"
-			p3s=""
-			if [[ -z $( getData "${x}" $(( y + 2 )) ) && -z $( getData "${x}" $(( y - 2 )) ) ]]
-			then
-				p3s="${p32}"
-			else
-				p3s="${p3}"
-				if [[ -z $( getData "${x}" $(( y + 2 )) ) ]]
-				then
-					insertData "${x}" $(( y + 3 )) $(( p3 - 1 ))
-				fi
-				if [[ -z $( getData "${x}" $(( y - 2 )) ) ]]
-				then
-					insertData "${x}" $(( y - 3 )) $(( p3 - 1 ))
-				fi
-			fi
-			
-			if [[ -z $( getData "${x}" $(( y + 2 )) ) && $( getData "${x}" $(( y + 3 )) ) == "${pID}" ]]
-			then
-				insertData "${x}" $(( y + 2 )) "${p4}"
-			else
-				insertData "${x}" $(( y + 2 )) "${p3s}"
-			fi
-			if [[ -z $( getData "${x}" $(( y - 2 )) ) && $( getData "${x}" $(( y - 3 )) ) == "${pID}" ]]
-			then
-				insertData "${x}" $(( y - 2 )) "${p4}"
-			else
-				insertData "${x}" $(( y - 2 )) "${p3s}"
-			fi
-			if [[ $( getData "${x}" $(( y + 2 )) ) == "${pID}" ]]
-			then
-				insertData "${x}" $(( y + 3 )) "${p4}"
-				insertData "${x}" $(( y - 2 )) "${p4}"
-			fi
-			if [[ $( getData "${x}" $(( y - 2 )) ) == "${pID}" ]]
-			then
-				insertData "${x}" $(( y - 3 )) "${p4}"
-				insertData "${x}" $(( y + 2 )) "${p4}"
-			fi
-		fi
-	fi
-	##########################################################
-	if [[ -z $( getData  $(( x - 1 )) $(( y + 1 )) ) && $( getData  $(( x - 2 )) $(( y + 2 )) ) == "${pID}" ]]
-	then
-		debug "3.0"
-		insertData $(( x - 1 )) $(( y + 1 )) "${p2}"
-	fi
-	if [[ $( getData $(( x - 1 )) $(( y + 1 )) ) == "${pID}" ]] # if 2 in row
-	then
-		debug "3.1"
-		t="obltop" # hor, ver, oblbot, obltop
-		insertData $(( x + 1 )) $(( y - 1 )) "${p2}"
-		insertData $(( x - 2 )) $(( y + 2 )) "${p2}"
-		if [[ -z $( getData $(( x + 1 )) $(( y - 1 )) ) && $( getData $(( x + 2 )) $(( y - 2 )) ) == "${pID}" ]]
-		then			
-			if [[ $( getData $(( x + 3 )) $(( y - 3 )) ) == "${pID}" ]]
-			then
-				insertData $(( x + 1 )) $(( y - 1 )) "${p4}"
-			else
-				insertData $(( x - 2 )) $(( y + 2 )) $(( p3 - 1 ))
-				insertData $(( x + 3 )) $(( y - 3 )) $(( p3 - 1 ))
-				if [[ -z $( getData $(( x - 2 )) $(( y + 2 )) ) && -z $( getData $(( x + 3 )) $(( y - 3 )) ) ]]
-				then
-					debug "3.1.3.1"
-					insertData $(( x + 1 )) $(( y - 1 )) "${p32}"
-				else
-					debug "3.1.3.2"
-					insertData $(( x + 1 )) $(( y - 1 )) "${p3}"
-				fi
-			fi
-		fi
-		if [[ -z $( getData $(( x - 2 )) $(( y + 2 )) ) && $( getData $(( x - 3 )) $(( y + 3 )) ) == "${pID}" ]]
-		then
-			insertData $(( x - 4 )) $(( y + 4 )) $(( p3 - 1 ))
-			insertData $(( x + 1 )) $(( y - 1 )) $(( p3 - 1 ))
-			if [[ -z $( getData $(( x - 4 )) $(( y + 4 )) ) && -z $( getData $(( x + 1 )) $(( y -1 )) ) ]]
-			then
-				debug "3.1.4.1"
-				insertData $(( x - 2 )) $(( y + 2 )) "${p32}"
-			else
-				debug "3.1.4.2"
-				insertData $(( x - 2 )) $(( y + 2 )) "${p3}"
-			fi
-		fi
-	
-		if [[ $( getData $(( x + 1 )) $(( y - 1 )) ) == "${pID}" ]] # if 3 in row
-		then
-			debug "3.2"
-			p3s=""
-			if [[ -z $( getData $(( x - 2 )) $(( y + 2 )) ) && -z $( getData $(( x + 2 )) $(( y - 2 )) ) ]]
-			then
-				p3s="${p32}"
-			else
-				p3s="${p3}"
-				if [[ -z $( getData $(( x - 2 )) $(( y + 2 )) ) ]]
-				then
-					insertData $(( x - 3 )) $(( y + 3 )) $(( p3 - 1 ))
-				fi
-				if [[ -z $( getData $(( x + 2 )) $(( y - 2 )) ) ]]
-				then
-					insertData $(( x + 3 )) $(( y - 3 )) $(( p3 - 1 ))
-				fi
-			fi
-			
-			if [[ -z $( getData $(( x + 2 )) $(( y - 2 )) ) && $( getData $(( x + 3 )) $(( y - 3 )) ) == "${pID}" ]]
-			then
-				insertData $(( x + 2 )) $(( y - 2 )) "${p4}"
-			else
-				insertData $(( x + 2 )) $(( y - 2 )) "${p3s}"
-			fi
-			if [[ -z $( getData $(( x - 2 )) $(( y + 2 )) ) && $( getData $(( x - 3 )) $(( y + 3 )) ) == "${pID}" ]]
-			then
-				insertData $(( x - 2 )) $(( y + 2 )) "${p4}"
-			else
-				insertData $(( x - 2 )) $(( y + 2 )) "${p3s}"
-			fi
-			if [[ $( getData $(( x + 2 )) $(( y - 2 )) ) == "${pID}" ]]
-			then
-				insertData $(( x + 3 )) $(( y - 3 )) "${p4}"
-				insertData $(( x - 2 )) $(( y + 2 )) "${p4}"
-			fi
-			if [[ $( getData $(( x - 2 )) $(( y + 2 )) ) == "${pID}" ]]
-			then
-				insertData $(( x - 3 )) $(( y + 3 )) "${p4}"
-				insertData $(( x + 2 )) $(( y - 2 )) "${p4}"
-			fi
-		fi
-	fi
-	##########################################################
-	if [[ -z $( getData  $(( x - 1 )) $(( y - 1 )) ) && $( getData  $(( x - 2 )) $(( y - 2 )) ) == "${pID}" ]]
-	then
-		debug "4.0"
-		insertData $(( x - 1 )) $(( y - 1 )) "${p2}"
-	fi
-	if [[ $( getData $(( x - 1 )) $(( y - 1 )) ) == "${pID}" ]] # if 2 in row
-	then
-		debug "4.1"
-		t="oblbot" # hor, ver, oblbot, obltop
-		insertData $(( x + 1 )) $(( y + 1 )) "${p2}"
-		insertData $(( x - 2 )) $(( y - 2 )) "${p2}"
-		if [[ -z $( getData $(( x + 1 )) $(( y + 1 )) ) && $( getData $(( x + 2 )) $(( y + 2 )) ) == "${pID}" ]]
-		then			
-			if [[ $( getData $(( x + 3 )) $(( y + 3 )) ) == "${pID}" ]]
-			then
-				insertData $(( x + 1 )) $(( y + 1 )) "${p4}"
-			else
-				insertData $(( x - 2 )) $(( y - 2 )) $(( p3 - 1 ))
-				insertData $(( x + 3 )) $(( y + 3 )) $(( p3 - 1 ))
-				if [[ -z $( getData $(( x - 2 )) $(( y - 2 )) ) && -z $( getData $(( x + 3 )) $(( y + 3 )) ) ]]
-				then
-					debug "4.1.3.1"
-					insertData $(( x + 1 )) $(( y + 1 )) "${p32}"
-				else
-					debug "4.1.3.2"
-					insertData $(( x + 1 )) $(( y + 1 )) "${p3}"
-				fi
-			fi
-		fi
-		if [[ -z $( getData $(( x - 2 )) $(( y - 2 )) ) && $( getData $(( x - 3 )) $(( y - 3 )) ) == "${pID}" ]]
-		then
-			insertData $(( x - 4 )) $(( y - 4 )) $(( p3 - 1 ))
-			insertData $(( x + 1 )) $(( y + 1 )) $(( p3 - 1 ))
-			if [[ -z $( getData $(( x - 4 )) $(( y - 4 )) ) && -z $( getData $(( x + 1 )) $(( y + 1 )) ) ]]
-			then
-				debug "4.1.4.1"
-				insertData $(( x - 2 )) $(( y - 2 )) "${p32}"
-			else
-				debug "4.1.4.2"
-				insertData $(( x - 2 )) $(( y - 2 )) "${p3}"
-			fi
-		fi
-	
-		if [[ $( getData $(( x + 1 )) $(( y + 1 )) ) == "${pID}" ]] # if 3 in row
-		then
-			debug "4.2"
-			p3s=""
-			if [[ -z $( getData $(( x + 2 )) $(( y + 2 )) ) && -z $( getData $(( x - 2 )) $(( y - 2 )) ) ]]
-			then
-				p3s="${p32}"
-			else
-				p3s="${p3}"
-				if [[ -z $( getData $(( x + 2 )) $(( y + 2 )) ) ]]
-				then
-					insertData $(( x + 3 )) $(( y + 3 ))  $(( p3 - 1 ))
-				fi
-				if [[ -z $( getData $(( x - 2 )) $(( y - 2 )) ) ]]
-				then
-					insertData $(( x - 3 )) $(( y - 3 )) $(( p3 - 1 ))
-				fi
-			fi
-			
-			if [[ -z $( getData $(( x + 2 )) $(( y + 2 )) ) && $( getData $(( x + 3 )) $(( y + 3 )) ) == "${pID}" ]]
-			then
-				insertData $(( x + 2 )) $(( y + 2 )) "${p4}"
-			else
-				insertData $(( x + 2 )) $(( y + 2 )) "${p3s}"
-			fi
-			if [[ -z $( getData $(( x - 2 )) $(( y - 2 )) ) && $( getData $(( x - 3 )) $(( y - 3 )) ) == "${pID}" ]]
-			then
-				insertData $(( x - 2 )) $(( y - 2 )) "${p4}"
-			else
-				insertData $(( x - 2 )) $(( y - 2 )) "${p3s}"
-			fi
-			if [[ $( getData $(( x + 2 )) $(( y + 2 )) ) == "${pID}" ]]
-			then
-				insertData $(( x + 3 )) $(( y + 3 )) "${p4}"
-				insertData $(( x - 2 )) $(( y - 2 )) "${p4}"
-			fi
-			if [[ $( getData $(( x - 2 )) $(( y - 2 )) ) == "${pID}" ]]
-			then
-				insertData $(( x - 3 )) $(( y - 3 )) "${p4}"
-				insertData $(( x + 2 )) $(( y + 2 )) "${p4}"
-			fi
-		fi
-	fi
-	##########################################################
-	
 }
 
 function cleanInvalidNextHits {
@@ -395,17 +299,46 @@ function cleanInvalidNextHits {
 	done
 }
 
-function getData {
-	sqlite3 "${tmpFolder}/${gID}.db" "SELECT p FROM game WHERE x = '${1}' AND y = '${2}';"
-}
+function hit {
+	action="${1}"
+	move="${2}"
+	hX=""
+	hY=""
 
-function insertData {
-	sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO nextHits ( x, y, p, t ) VALUES ( '${1}', '${2}', '${3}', '${t}' ) ON CONFLICT( x, y, t ) DO UPDATE SET p = CASE WHEN p < ${3} THEN ${3} ELSE p END;"
-	debug "INSERT: ${1}, ${2}, ${3}, ${t}"
+	if [[ "${t}" == "hor" ]]
+	then
+		hX=$(( x + move ))
+		hY="${y}"
+	elif [[ "${t}" == "ver" ]]
+	then
+		hX="${x}"
+		hY=$(( y + move ))
+	elif [[ "${t}" == "oblbot" ]]
+	then
+		hX=$(( x + move ))
+		hY=$(( y - move ))
+	elif [[ "${t}" == "obltop" ]]
+	then
+		hX=$(( x + move ))
+		hY=$(( y + move ))
+	else
+		return 1
+	fi
+	
+	if [[ "${action}" == "g" ]]
+	then
+		sqlite3 "${tmpFolder}/${gID}.db" "SELECT p FROM game WHERE x = '${hX}' AND y = '${hY}';"
+	elif [[ "${action}" == "i" ]]
+	then
+		sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO nextHits ( x, y, p, t ) VALUES ( '${hX}', '${hY}', '${3}', '${t}' ) ON CONFLICT( x, y, t ) DO UPDATE SET p = CASE WHEN p < ${3} THEN ${3} ELSE p END;"
+		debug "INSERT: ${hX}, ${hY}, ${3}, ${t}"
+	else
+		return 2
+	fi
 }
 
 function thinking {
-
+	
 	nHX=""
 	nHY=""	
 	sqlite3 "${tmpFolder}/${gID}.db" "DELETE FROM nextHits;"
@@ -427,9 +360,7 @@ function thinking {
 	debug "########## Prehled, ze kteryho vybiram:"
 	debug "$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y, s FROM nextHitsView;" )"
 	debug "########## Konec prehledu"
-	line=$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y FROM nextHitsView WHERE s = ( SELECT MAX(s) FROM nextHitsView ) ORDER BY RANDOM() LIMIT 1;" )
-	nHX=$( echo "${line}" | cut -d "|" -f 1 )
-	nHY=$( echo "${line}" | cut -d "|" -f 2 )
+	chooseTheBest
 	
 	###first few hits:
 	
@@ -461,9 +392,10 @@ function thinking {
 			debug "########## Moznosti mimo:"
 			debug "$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y, s FROM nextHitsView WHERE s = ( SELECT MAX(s) FROM nextHitsView ) ORDER BY RANDOM();" )"
 			debug "########## Konec moznosti mimo"
-			line=$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y FROM nextHitsView WHERE s = ( SELECT MAX(s) FROM nextHitsView ) ORDER BY RANDOM() LIMIT 1;" )
-			nHX=$( echo "${line}" | cut -d "|" -f 1 )
-			nHY=$( echo "${line}" | cut -d "|" -f 2 )
+			chooseTheBest
+			#line=$( sqlite3 "${tmpFolder}/${gID}.db" "SELECT x, y FROM nextHitsView WHERE s = ( SELECT MAX(s) FROM nextHitsView ) ORDER BY RANDOM() LIMIT 1;" )
+			#nHX=$( echo "${line}" | cut -d "|" -f 1 )
+			#nHY=$( echo "${line}" | cut -d "|" -f 2 )
 		fi
 	fi
 }
