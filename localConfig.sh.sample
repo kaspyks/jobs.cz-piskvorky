@@ -1,0 +1,6 @@
+#!/bin/bash
+
+declare -r uID=""
+declare -r uToken=""
+
+declare -r testEnv=1
