@@ -56,7 +56,7 @@ function actualState {
 		res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 2
+		sleep 1.2
 
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -106,15 +106,12 @@ function checkCompletedGame {
 	if [[ "${winner}" == "${uID}" ]]
 	then
 		print "You win! Congrats!"
+		rm "${tmpFolder}/${gID}.db"
+		rm "${tmpFolder}/${gID}.log"
 	else
 		print "You are looser"
 	fi
 	print "End of game. Exiting"
-	if [[ "${testEnv}" -ne 1 ]]
-	then
-		rm "${tmpFolder}/${gID}.db"
-		rm "${tmpFolder}/${gID}.log"
-	fi
 	sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "UPDATE games SET status = 'ended' WHERE gID = '${gID}' AND gToken = '${gToken}';"
 	exit 0
 }
@@ -129,7 +126,7 @@ function getLastHit {
 		res=$( curl "${domain}/api/v1/checkLastStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 2
+		sleep 1.2
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -190,7 +187,7 @@ function initGame {
 	res=$( curl "${domain}/api/v1/connect" -d "{ \"userToken\": \"${uToken}\"}" )
 	#log "$( echo "${res}" | jq --compact-output '.' )" ## neni jeste zjisteni gID
 	sCode=$( echo "${res}" | jq '.statusCode' )
-	sleep 2
+	sleep 1
 	
 	if echo "${sCode}" | grep -iq "^20.$"
 	then
@@ -203,10 +200,11 @@ function initGame {
 		startTime=$( date "+%s" )
 		
 		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "INSERT INTO games ( gID, gToken, status ) VALUES ( '${gID}', '${gToken}', 'playing' );"
-		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE game ( x INTEGER, y INTEGER, p VARCHAR ( 50 ), UNIQUE ( x , y ) )"
+		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE game ( x INTEGER, y INTEGER, p VARCHAR ( 50 ), done INTEGER, UNIQUE ( x , y ) )"
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE nextHits ( x INTEGER, y INTEGER, p INTEGER, t VARCHAR ( 20 ), UNIQUE ( x, y, t ) )" # coordinate X, coordinate Y, Priority, Type [ hor, ver, oblbot, obltop ]
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE theBest ( x INTEGER, y INTEGER, p INTEGER, UNIQUE ( x, y ) )" # coordinate X, coordinate Y, Priority
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE VIEW nextHitsView AS SELECT x, y, SUM(p) AS s FROM nextHits GROUP BY x, y;"
+		sqlite3 "${tmpFolder}/${gID}.db" ".timeout 10000"
 		print "Init Game - Successful"
 		print "Init Game - Game Token: ${gToken}"
 		print "Init Game - Game ID: ${gID}"
@@ -234,7 +232,7 @@ function regenerateDB {
 			res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 			#log "$( echo "${res}" | jq --compact-output '.' )"
 			sCode=$( echo "${res}" | jq '.statusCode' )
-			sleep 2
+			sleep 1.2
 			
 			if echo "${sCode}" | grep -iq "^2..$"
 			then
@@ -276,7 +274,7 @@ function sendHit {
 		res=$( curl "${domain}/api/v1/play" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\", \"positionX\": ${nHX}, \"positionY\": ${nHY}}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 2
+		sleep 1.2
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -323,7 +321,7 @@ function waitingForGame {
 		res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 2
+		sleep 1.2
 		
 		p0=""
 		p1=""
@@ -374,4 +372,4 @@ do
 	getLastHit
 	thinking
 	sendHit
-done	
+done
