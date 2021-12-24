@@ -13,6 +13,7 @@ declare -r minX=-28
 declare -r maxY=20
 declare -r minY=-19
 
+declare -a field # x|y|pID|done
 gToken="" # Game Token
 gID="" # GameID
 lHX="" # last hit coordinate X
@@ -126,7 +127,7 @@ function getLastHit {
 		res=$( curl "${domain}/api/v1/checkLastStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 1.2
+		# sleep 1.2
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -148,7 +149,8 @@ function getLastHit {
 				lHY=$( echo "${res}" | jq ".coordinates[0].y" )
 				if [[ "${lHX}" != "null" && "${lHY}" != "null" ]]
 				then
-					sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${lHX}', '${lHY}', '${oppID}' )"
+					field[$((lHX+100))0$((lHY+100))]="${lHX}|${lHY}|${oppID}|0"
+					#sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${lHX}', '${lHY}', '${oppID}' )"
 					print "@@@ Opponent hit on X: ${lHX}, Y: ${lHY}"
 				fi
 				break
@@ -200,7 +202,7 @@ function initGame {
 		startTime=$( date "+%s" )
 		
 		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "INSERT INTO games ( gID, gToken, status ) VALUES ( '${gID}', '${gToken}', 'playing' );"
-		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE game ( x INTEGER, y INTEGER, p VARCHAR ( 50 ), done INTEGER, UNIQUE ( x , y ) )"
+		#sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE game ( x INTEGER, y INTEGER, p VARCHAR ( 50 ), done INTEGER, UNIQUE ( x , y ) )"
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE nextHits ( x INTEGER, y INTEGER, p INTEGER, t VARCHAR ( 20 ), UNIQUE ( x, y, t ) )" # coordinate X, coordinate Y, Priority, Type [ hor, ver, oblbot, obltop ]
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE theBest ( x INTEGER, y INTEGER, p INTEGER, UNIQUE ( x, y ) )" # coordinate X, coordinate Y, Priority
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE VIEW nextHitsView AS SELECT x, y, SUM(p) AS s FROM nextHits GROUP BY x, y;"
@@ -221,7 +223,9 @@ function initGame {
 }
 
 function regenerateDB {
-	sqlite3 "${tmpFolder}/${gID}.db" "DELETE FROM game;"
+	unset field
+	declare -a field
+	#sqlite3 "${tmpFolder}/${gID}.db" "DELETE FROM game;"
 	
 	res=""
 	sCode=""
@@ -263,7 +267,8 @@ function regenerateDB {
 		x=$( echo "${res}" | jq ".coordinates[${i}].x" )
 		y=$( echo "${res}" | jq ".coordinates[${i}].y" )
 		p=$( echo "${res}" | jq ".coordinates[${i}].playerId" | tr -d '"' )
-		sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${x}', '${y}', '${p}' )"
+		field[$((x+100))0$((y+100))]="${x}|${y}|${p}|0"
+		#sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${x}', '${y}', '${p}' )"
 	done
 	debug "Regenerating successful"
 }
@@ -278,7 +283,8 @@ function sendHit {
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
-			sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${nHX}', '${nHY}', '${uID}' )"
+			field[$((nHX+100))0$((nHY+100))]="${nHX}|${nHY}|${uID}|0"
+			#sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${nHX}', '${nHY}', '${uID}' )"
 			print "@@@ My hit on X: ${nHX}, Y: ${nHY}"
 			break
 		fi
