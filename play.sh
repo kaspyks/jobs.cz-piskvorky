@@ -21,7 +21,6 @@ lHY="" # last hit coordinate Y
 nHX="" # next hit coordinate X
 nHY="" # next hit coordinate Y
 oppID="" # ID of opponent
-startTime=""
 
 shopt -s expand_aliases
 alias curl="curl -s -X POST -H \"accept: application/json\" -H \"Content-Type: application/json\""
@@ -57,7 +56,7 @@ function actualState {
 		res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 1.2
+		sleep 1.5
 
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -65,14 +64,13 @@ function actualState {
 			if [[ "${aP}" != "${uID}" ]]
 			then
 				print "Actual State - Opponent's turn"
-				aDate=$( date "+%s" )
 				opponentsTurnCount=$(( opponentsTurnCount + 1 ))
-				if [[ ${opponentsTurnCount} -gt 60 && ${aDate} -gt $(( startTime + 600 )) ]]
+				if [[ ${opponentsTurnCount} -gt 80 ]]
 				then
 					print "Actual State - Error timeout reached. Exiting"
 					exit 2
 				fi
-				sleep 5
+				sleep 3
 				continue
 			fi
 			#regenerateDB "${res}"
@@ -127,7 +125,7 @@ function getLastHit {
 		res=$( curl "${domain}/api/v1/checkLastStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		# sleep 1.2
+		# sleep 1.5
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -135,14 +133,13 @@ function getLastHit {
 			if [[ "${aP}" != "${uID}" ]]
 			then
 				print "Get Last Hit - Opponent's turn"
-				aDate=$( date "+%s" )
 				opponentsTurnCount=$(( opponentsTurnCount + 1 ))
-				if [[ ${opponentsTurnCount} -gt 60 && ${aDate} -gt $(( startTime + 600 )) ]]
+				if [[ ${opponentsTurnCount} -gt 80 ]]
 				then
 					print "Get Last Hit - Error timeout reached. Exiting"
 					exit 2
 				fi
-				sleep 5
+				sleep 3
 				continue
 			else
 				lHX=$( echo "${res}" | jq ".coordinates[0].x" )
@@ -183,7 +180,7 @@ function initGame {
 	then
 		gToken="${1}"
 		gID="${2}"
-		regenerateDB
+		regenerateDB ""
 		return 0
 	fi
 	res=$( curl "${domain}/api/v1/connect" -d "{ \"userToken\": \"${uToken}\"}" )
@@ -199,11 +196,10 @@ function initGame {
 		fi
 		gToken=$( echo "${res}" | jq '.gameToken' | tr -d '"' )
 		gID=$( echo "${res}" | jq '.gameId' | tr -d '"' )
-		startTime=$( date "+%s" )
 		
 		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "INSERT INTO games ( gID, gToken, status ) VALUES ( '${gID}', '${gToken}', 'playing' );"
 		#sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE game ( x INTEGER, y INTEGER, p VARCHAR ( 50 ), done INTEGER, UNIQUE ( x , y ) )"
-		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE nextHits ( x INTEGER, y INTEGER, p INTEGER, t VARCHAR ( 20 ), UNIQUE ( x, y, t ) )" # coordinate X, coordinate Y, Priority, Type [ hor, ver, oblbot, obltop ]
+		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE nextHits ( x INTEGER, y INTEGER, p INTEGER, t VARCHAR ( 20 ), player VARCHAR ( 50 ), UNIQUE ( x, y, t ) )" # coordinate X, coordinate Y, Priority, Type [ hor, ver, oblbot, obltop ]
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE theBest ( x INTEGER, y INTEGER, p INTEGER, UNIQUE ( x, y ) )" # coordinate X, coordinate Y, Priority
 		sqlite3 "${tmpFolder}/${gID}.db" "CREATE VIEW nextHitsView AS SELECT x, y, SUM(p) AS s FROM nextHits GROUP BY x, y;"
 		sqlite3 "${tmpFolder}/${gID}.db" ".timeout 10000"
@@ -236,7 +232,7 @@ function regenerateDB {
 			res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 			#log "$( echo "${res}" | jq --compact-output '.' )"
 			sCode=$( echo "${res}" | jq '.statusCode' )
-			sleep 1.2
+			sleep 1.5
 			
 			if echo "${sCode}" | grep -iq "^2..$"
 			then
@@ -279,7 +275,7 @@ function sendHit {
 		res=$( curl "${domain}/api/v1/play" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\", \"positionX\": ${nHX}, \"positionY\": ${nHY}}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 1.2
+		sleep 1.5
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -300,8 +296,8 @@ function sendHit {
 				break
 			elif [[ "${sCode}" == "409" ]]
 			then
-				print "Send Hit - Error ${sCode}"
-				regenerateDB
+				print "Send Hit - Error ${sCode} ... trying to hit X: ${nHX}, Y: ${nHY}"
+				regenerateDB ""
 				break
 			elif [[ "${sCode}" == "410" ]]
 			then
@@ -327,7 +323,7 @@ function waitingForGame {
 		res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 1.2
+		sleep 1.5
 		
 		p0=""
 		p1=""
@@ -339,7 +335,7 @@ function waitingForGame {
 			if [[ "${p0}" == "null" || "${p1}" == "null" ]]
 			then
 				print "Waiting For Game - Opponent isn't connected yet, waiting..."
-				sleep 10
+				sleep 3
 				continue
 			fi
 		fi
