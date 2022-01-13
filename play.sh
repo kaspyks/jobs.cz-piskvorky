@@ -13,7 +13,9 @@ declare -r minX=-28
 declare -r maxY=20
 declare -r minY=-19
 
-declare -a field # x|y|pID|done
+declare -a field # x|y|pID|done0|done1|done2|done3
+declare -a nextHits # x|y|pID|done0|done1|done2|done3
+nextHitsMax=0
 gToken="" # Game Token
 gID="" # GameID
 lHX="" # last hit coordinate X
@@ -21,7 +23,6 @@ lHY="" # last hit coordinate Y
 nHX="" # next hit coordinate X
 nHY="" # next hit coordinate Y
 oppID="" # ID of opponent
-startTime=""
 
 shopt -s expand_aliases
 alias curl="curl -s -X POST -H \"accept: application/json\" -H \"Content-Type: application/json\""
@@ -42,6 +43,15 @@ function log {
 	echo "[$( date "+%Y/%m/%d %H:%M:%S" )] - ${1}" >> "${tmpFolder}/${gID}.log"
 }
 
+function mySleep {
+	if [[ "${oppID}" == "97fcaf02-ebd8-4a93-9252-cad52f9a8a1f" ]]
+	then
+		sleep 2
+	else
+		sleep 1
+	fi
+}
+
 function print {
 	echo "${1}"
 	#log "${1}"
@@ -57,7 +67,7 @@ function actualState {
 		res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
 		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 1.2
+		mySleep
 
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -65,14 +75,13 @@ function actualState {
 			if [[ "${aP}" != "${uID}" ]]
 			then
 				print "Actual State - Opponent's turn"
-				aDate=$( date "+%s" )
 				opponentsTurnCount=$(( opponentsTurnCount + 1 ))
-				if [[ ${opponentsTurnCount} -gt 60 && ${aDate} -gt $(( startTime + 600 )) ]]
+				if [[ ${opponentsTurnCount} -gt 120 ]]
 				then
 					print "Actual State - Error timeout reached. Exiting"
 					exit 2
 				fi
-				sleep 5
+				sleep 3
 				continue
 			fi
 			#regenerateDB "${res}"
@@ -89,7 +98,7 @@ function actualState {
 			if [[ "${sCode}" == "429" ]]
 			then
 				print "Actual State - Too many connections - Error ${sCode}"
-				sleep 2
+				sleep 3
 				continue
 			else
 				print "Actual State - Error ${sCode}"
@@ -109,11 +118,12 @@ function checkCompletedGame {
 		print "You win! Congrats!"
 		rm "${tmpFolder}/${gID}.db"
 		rm "${tmpFolder}/${gID}.log"
+		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "UPDATE games SET status = 'winner' WHERE gID = '${gID}' AND gToken = '${gToken}';"
 	else
 		print "You are looser"
+		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "UPDATE games SET status = 'looser' WHERE gID = '${gID}' AND gToken = '${gToken}';"
 	fi
 	print "End of game. Exiting"
-	sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "UPDATE games SET status = 'ended' WHERE gID = '${gID}' AND gToken = '${gToken}';"
 	exit 0
 }
 
@@ -125,9 +135,8 @@ function getLastHit {
 		lHX=""
 		lHY=""
 		res=$( curl "${domain}/api/v1/checkLastStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
-		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		# sleep 1.2
+		# mySleep
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
@@ -135,23 +144,22 @@ function getLastHit {
 			if [[ "${aP}" != "${uID}" ]]
 			then
 				print "Get Last Hit - Opponent's turn"
-				aDate=$( date "+%s" )
 				opponentsTurnCount=$(( opponentsTurnCount + 1 ))
-				if [[ ${opponentsTurnCount} -gt 60 && ${aDate} -gt $(( startTime + 600 )) ]]
+				if [[ "${1}" != "notimeout" && ${opponentsTurnCount} -gt 80 ]]
 				then
 					print "Get Last Hit - Error timeout reached. Exiting"
+					sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "UPDATE games SET status = 'timeouted' WHERE gID = '${gID}' AND gToken = '${gToken}';"
 					exit 2
 				fi
-				sleep 5
+				sleep 3
 				continue
 			else
 				lHX=$( echo "${res}" | jq ".coordinates[0].x" )
 				lHY=$( echo "${res}" | jq ".coordinates[0].y" )
 				if [[ "${lHX}" != "null" && "${lHY}" != "null" ]]
 				then
-					field[$((lHX+100))0$((lHY+100))]="${lHX}|${lHY}|${oppID}|0"
-					#sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${lHX}', '${lHY}', '${oppID}' )"
-					print "@@@ Opponent hit on X: ${lHX}, Y: ${lHY}"
+					field[$((lHX+100))0$((lHY+100))]="${lHX}|${lHY}|${oppID}|0|0|0|0"
+					print "@@@ Opponent's hit on X: ${lHX}, Y: ${lHY}"
 				fi
 				break
 			fi
@@ -167,7 +175,7 @@ function getLastHit {
 			if [[ "${sCode}" == "429" ]]
 			then
 				print "Get Last Hit - Too many connections - Error ${sCode}"
-				sleep 2
+				sleep 3
 				continue
 			else
 				print "Get Last Hit - Error ${sCode}"
@@ -179,17 +187,16 @@ function getLastHit {
 }
 
 function initGame {
-	if [[ -n "${1}" && -n "${2}" ]]
+	if [[ -n "${1}" ]]
 	then
-		gToken="${1}"
-		gID="${2}"
-		regenerateDB
+		gID="${1}"
+		gToken=$( sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "SELECT gToken FROM games WHERE gID = '${gID}';" )
+		regenerateDB ""
 		return 0
 	fi
 	res=$( curl "${domain}/api/v1/connect" -d "{ \"userToken\": \"${uToken}\"}" )
-	#log "$( echo "${res}" | jq --compact-output '.' )" ## neni jeste zjisteni gID
 	sCode=$( echo "${res}" | jq '.statusCode' )
-	sleep 1
+	mySleep
 	
 	if echo "${sCode}" | grep -iq "^20.$"
 	then
@@ -199,18 +206,12 @@ function initGame {
 		fi
 		gToken=$( echo "${res}" | jq '.gameToken' | tr -d '"' )
 		gID=$( echo "${res}" | jq '.gameId' | tr -d '"' )
-		startTime=$( date "+%s" )
 		
-		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "INSERT INTO games ( gID, gToken, status ) VALUES ( '${gID}', '${gToken}', 'playing' );"
-		#sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE game ( x INTEGER, y INTEGER, p VARCHAR ( 50 ), done INTEGER, UNIQUE ( x , y ) )"
-		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE nextHits ( x INTEGER, y INTEGER, p INTEGER, t VARCHAR ( 20 ), UNIQUE ( x, y, t ) )" # coordinate X, coordinate Y, Priority, Type [ hor, ver, oblbot, obltop ]
-		sqlite3 "${tmpFolder}/${gID}.db" "CREATE TABLE theBest ( x INTEGER, y INTEGER, p INTEGER, UNIQUE ( x, y ) )" # coordinate X, coordinate Y, Priority
-		sqlite3 "${tmpFolder}/${gID}.db" "CREATE VIEW nextHitsView AS SELECT x, y, SUM(p) AS s FROM nextHits GROUP BY x, y;"
-		sqlite3 "${tmpFolder}/${gID}.db" ".timeout 10000"
+		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "INSERT INTO games ( gID, gToken, status ) VALUES ( '${gID}', '${gToken}', 'waiting' );"
 		print "Init Game - Successful"
 		print "Init Game - Game Token: ${gToken}"
 		print "Init Game - Game ID: ${gID}"
-		print "./play.sh ${gToken} ${gID}"
+		print "./play.sh ${gID}"
 		return 0
 	fi
 		
@@ -223,9 +224,9 @@ function initGame {
 }
 
 function regenerateDB {
+
 	unset field
-	declare -a field
-	#sqlite3 "${tmpFolder}/${gID}.db" "DELETE FROM game;"
+	declare -ga field
 	
 	res=""
 	sCode=""
@@ -234,9 +235,8 @@ function regenerateDB {
 		while true
 		do
 			res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
-			#log "$( echo "${res}" | jq --compact-output '.' )"
 			sCode=$( echo "${res}" | jq '.statusCode' )
-			sleep 1.2
+			mySleep
 			
 			if echo "${sCode}" | grep -iq "^2..$"
 			then
@@ -247,7 +247,7 @@ function regenerateDB {
 					if [[ "${sCode}" == "429" ]]
 					then
 						print "Regenerate DB - Too many connections - Error ${sCode}"
-						sleep 2
+						sleep 3
 						continue
 					else
 						print "Regenerate DB - Error ${sCode}"
@@ -267,8 +267,7 @@ function regenerateDB {
 		x=$( echo "${res}" | jq ".coordinates[${i}].x" )
 		y=$( echo "${res}" | jq ".coordinates[${i}].y" )
 		p=$( echo "${res}" | jq ".coordinates[${i}].playerId" | tr -d '"' )
-		field[$((x+100))0$((y+100))]="${x}|${y}|${p}|0"
-		#sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${x}', '${y}', '${p}' )"
+		field[$((x+100))0$((y+100))]="${x}|${y}|${p}|0|0|0|0"
 	done
 	debug "Regenerating successful"
 }
@@ -277,14 +276,12 @@ function sendHit {
 	while true
 	do
 		res=$( curl "${domain}/api/v1/play" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\", \"positionX\": ${nHX}, \"positionY\": ${nHY}}" )
-		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 1.2
+		mySleep
 		
 		if echo "${sCode}" | grep -iq "^20.$"
 		then
-			field[$((nHX+100))0$((nHY+100))]="${nHX}|${nHY}|${uID}|0"
-			#sqlite3 "${tmpFolder}/${gID}.db" "INSERT INTO game ( x, y, p ) VALUES ( '${nHX}', '${nHY}', '${uID}' )"
+			field[$((nHX+100))0$((nHY+100))]="${nHX}|${nHY}|${uID}|0|0|0|0"
 			print "@@@ My hit on X: ${nHX}, Y: ${nHY}"
 			break
 		fi
@@ -300,8 +297,8 @@ function sendHit {
 				break
 			elif [[ "${sCode}" == "409" ]]
 			then
-				print "Send Hit - Error ${sCode}"
-				regenerateDB
+				print "Send Hit - Error ${sCode} ... trying to hit X: ${nHX}, Y: ${nHY}"
+				regenerateDB ""
 				break
 			elif [[ "${sCode}" == "410" ]]
 			then
@@ -310,7 +307,7 @@ function sendHit {
 			elif [[ "${sCode}" == "429" ]]
 			then
 				print "Send Hit - Too many connections - Error ${sCode}"
-				sleep 2
+				sleep 3
 				continue
 			else
 				print "Send Hit - Error ${sCode}"
@@ -325,9 +322,8 @@ function waitingForGame {
 	while true
 	do
 		res=$( curl "${domain}/api/v1/checkStatus" -d "{ \"userToken\": \"${uToken}\", \"gameToken\": \"${gToken}\"}" )
-		#log "$( echo "${res}" | jq --compact-output '.' )"
 		sCode=$( echo "${res}" | jq '.statusCode' )
-		sleep 1.2
+		mySleep
 		
 		p0=""
 		p1=""
@@ -339,7 +335,7 @@ function waitingForGame {
 			if [[ "${p0}" == "null" || "${p1}" == "null" ]]
 			then
 				print "Waiting For Game - Opponent isn't connected yet, waiting..."
-				sleep 10
+				sleep 3
 				continue
 			fi
 		fi
@@ -349,9 +345,9 @@ function waitingForGame {
 			if [[ "${sCode}" == "429" ]]
 			then
 				print "Waiting For Game - Too many connections - Error ${sCode}"
-				sleep 2
+				sleep 3
 				continue
-			else			
+			else
 				print "Waiting For Game - Error ${sCode}"
 				print "${res}"
 				exit 1
@@ -364,18 +360,19 @@ function waitingForGame {
 		else
 			oppID="${p1}"
 		fi
+		sqlite3 "$( dirname "$( realpath "${0}" )" )/centralDB.db" "UPDATE games SET status = '${oppID}' WHERE gID = '${gID}' AND gToken = '${gToken}';"
 		break
 	done
 }
 
-initGame "${1}" "${2}"
+initGame "${1}"
 waitingForGame
 #Let's Play!
 print "Ready to play"
 while true
 do
 	#actualState
-	getLastHit
+	getLastHit "${2}"
 	thinking
 	sendHit
 done
