@@ -133,6 +133,20 @@ function chooseTheBest {
 	done
 }
 
+
+function cleanLowPriorityNextHits {
+	for line in "${nextHits[@]}"
+	do
+		x=$( echo "${line}" | cut -d "|" -f 1 )
+		y=$( echo "${line}" | cut -d "|" -f 2 )
+		p=$( echo "${line}" | cut -d "|" -f 3 )
+		if [[ "${p}" -lt "2000" ]]
+		then
+			nextHits[$((x+100))0$((y+100))]=""
+		fi
+	done
+}
+
 function cleanInvalidNextHits {
 	for line in "${nextHits[@]}"
 	do
@@ -260,7 +274,103 @@ function thinking {
 	then
 		return
 	fi
+	
+	if [[ -n ${nextNextHit} ]]
+	then
+		aX=$( echo "${nextNextHit}" | cut -d "|" -f 1 )
+		aY=$( echo "${nextNextHit}" | cut -d "|" -f 2 )
+		nextNextHit=""
+		if [[ -z ${field[$((aX+100))0$((aY+100))]} ]]
+		then
+			nHX="${aX}"
+			nHY="${aY}"
+			return
+		fi
+	fi
 
+	for line in "${field[@]}"
+	do
+		aX=$( echo "${line}" | cut -d "|" -f 1 )
+		aY=$( echo "${line}" | cut -d "|" -f 2 )
+		aPID=$( echo "${line}" | cut -d "|" -f 3 )
+		if [[ "${aPID}" == "${pID}" ]]; then continue; fi
+		doneFields[0]=$( echo "${line}" | cut -d "|" -f 4 )
+		doneFields[1]=$( echo "${line}" | cut -d "|" -f 5 )
+		doneFields[2]=$( echo "${line}" | cut -d "|" -f 6 )
+		doneFields[3]=$( echo "${line}" | cut -d "|" -f 7 )
+		self=0
+		for t in 0 1 2 3
+		do
+			if [[ "${doneFields[${t}]}" != "1" ]]
+			then
+				hG1=$( hit "g" "1" "${t}" )
+				hG2=$( hit "g" "2" "${t}" )
+				hG3=$( hit "g" "3" "${t}" )
+				hGN1=$( hit "g" "-1" "${t}" )
+				hGN2=$( hit "g" "-2" "${t}" )
+				hGN3=$( hit "g" "-3" "${t}" )
+				hGN4=$( hit "g" "-4" "${t}" )
+				threatSoft
+			fi
+		done
+	done
+	
+	cleanInvalidNextHits
+	debug "########## oppID Soft - prehled, ze kteryho vybiram:"
+	for i in "${nextHits[@]}"; do debug "${i}"; done
+	debug "########## oppID Soft - Konec prehledu"
+	
+	self=1
+	for line in "${nextHits[@]}"
+	do
+		if [[ -z "${line}" ]]; then continue; fi
+		aX=$( echo "${line}" | cut -d "|" -f 1 )
+		aY=$( echo "${line}" | cut -d "|" -f 2 )
+		aPID=$( echo "${line}" | cut -d "|" -f 4 )
+		for t in 0 1 2 3
+		do
+			hG1=$( hit "g" "1" "${t}" )
+			hG2=$( hit "g" "2" "${t}" )
+			hG3=$( hit "g" "3" "${t}" )
+			hG4=$( hit "g" "4" "${t}" )
+			hGN1=$( hit "g" "-1" "${t}" )
+			hGN2=$( hit "g" "-2" "${t}" )
+			hGN3=$( hit "g" "-3" "${t}" )
+			hGN4=$( hit "g" "-4" "${t}" )
+			threatHard
+		done
+	done
+	
+	cleanLowPriorityNextHits
+	cleanInvalidNextHits
+	debug "########## oppID Soft + Hard - prehled, ze kteryho vybiram:"
+	for i in "${nextHits[@]}"; do debug "${i}"; done
+	debug "########## oppID Soft + Hard - Konec prehledu"
+	chooseTheBest
+	
+	if [[ -n "${nHX}" || -n "${nHY}" ]] # if I found coordinates for next hit, return back and send hit
+	then
+		return
+	fi
+	
+	for line in "${field[@]}"
+	do
+		aPID=$( echo "${line}" | cut -d "|" -f 3 )
+		if [[ "${aPID}" == "${oppID}" ]]; then continue; fi
+		
+		aX=$( echo "${line}" | cut -d "|" -f 1 )
+		aY=$( echo "${line}" | cut -d "|" -f 2 )
+		if opportunity
+		then
+			break
+		fi
+	done
+	
+	if [[ -n "${nHX}" || -n "${nHY}" ]] # if I found coordinates for next hit, return back and send hit
+	then
+		return
+	fi
+	
 	for line in "${field[@]}"
 	do
 		aX=$( echo "${line}" | cut -d "|" -f 1 )
@@ -395,6 +505,892 @@ function thinking {
 	nHX=$(( ( $RANDOM % 20 ) - 10 ))
 	nHY=$(( ( $RANDOM % 14 ) - 7 ))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function opportunity {
+	function h {
+		lX="${1}"
+		lY="${2}"
+		echo "${field[$((aX+lX+100))0$((aY+lY+100))]}" | cut -d "|" -f 3 | tr -d " "
+	}
+	
+	if [[ ( -z $( h "0" "-2" ) || $( h "0" "-2" ) == "${aPID}" ) && ( -z $( h "0" "1" ) || $( h "0" "1" ) == "${aPID}" ) && ( -z $( h "0" "-3" ) || $( h "0" "-3" ) == "${aPID}" ) && ( ( -z $( h "0" "-4" ) || $( h "0" "-4" ) == "${aPID}" ) || ( -z $( h "0" "2" ) || $( h "0" "2" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "3" "1" ) || $( h "3" "1" ) == "${aPID}" ) && ( -z $( h "-1" "-3" ) || $( h "-1" "-3" ) == "${aPID}" ) && ( ( -z $( h "-2" "-4" ) || $( h "-2" "-4" ) == "${aPID}" ) || ( -z $( h "4" "2" ) || $( h "4" "2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "-1" ) && $( h "1" "-1" ) == "${aPID}" && $( h "2" "0" ) == "${aPID}" ]]; then debug "o12.0.1";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && -z $( h "1" "-1" ) && $( h "2" "0" ) == "${aPID}" ]]; then debug "o12.0.2";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && $( h "1" "-1" ) == "${aPID}" && -z $( h "2" "0" ) ]]; then debug "o12.0.3";
+				nHX=$(( aX + 2 ))
+				nHY="${aY}"
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		
+		if [[ ( -z $( h "3" "-2" ) || $( h "3" "-2" ) == "${aPID}" ) && ( -z $( h "-1" "-2" ) || $( h "-1" "-2" ) == "${aPID}" ) && ( ( -z $( h "-2" "-2" ) || $( h "-2" "-2" ) == "${aPID}" ) || ( -z $( h "4" "-2" ) || $( h "4" "-2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "-1" ) && $( h "1" "-2" ) == "${aPID}" && $( h "2" "-2" ) == "${aPID}" ]]; then debug "o13.0.1";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && -z $( h "1" "-2" ) && $( h "2" "-2" ) == "${aPID}" ]]; then debug "o13.0.2";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && $( h "1" "-2" ) == "${aPID}" && -z $( h "2" "-2" ) ]]; then debug "o13.0.3";
+				nHX=$(( aX + 2 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "3" "-5" ) || $( h "3" "-5" ) == "${aPID}" ) && ( -z $( h "-1" "-1" ) || $( h "-1" "-1" ) == "${aPID}" ) && ( ( -z $( h "-2" "0" ) || $( h "-2" "0" ) == "${aPID}" ) || ( -z $( h "4" "-6" ) || $( h "4" "-6" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "-1" ) && $( h "1" "-3" ) == "${aPID}" && $( h "2" "-4" ) == "${aPID}" ]]; then debug "o14.0.1";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && -z $( h "1" "-3" ) && $( h "2" "-4" ) == "${aPID}" ]]; then debug "o14.0.2";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && $( h "1" "-3" ) == "${aPID}" && -z $( h "2" "-4" ) ]]; then debug "o14.0.3";
+				nHX=$(( aX + 2 ))
+				nHY=$(( aY - 4 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-3" "-5" ) || $( h "-3" "-5" ) == "${aPID}" ) && ( -z $( h "1" "-1" ) || $( h "1" "-1" ) == "${aPID}" ) && ( ( -z $( h "2" "0" ) || $( h "2" "0" ) == "${aPID}" ) || ( -z $( h "-4" "-6" ) || $( h "-4" "-6" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "-1" ) && $( h "-1" "-3" ) == "${aPID}" && $( h "-2" "-4" ) == "${aPID}" ]]; then debug "o16.0.1";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && -z $( h "-1" "-3" ) && $( h "-2" "-4" ) == "${aPID}" ]]; then debug "o16.0.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && $( h "-1" "-3" ) == "${aPID}" && -z $( h "-2" "-4" ) ]]; then debug "o16.0.3";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 4 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-3" "-2" ) || $( h "-3" "-2" ) == "${aPID}" ) && ( -z $( h "1" "-2" ) || $( h "1" "-2" ) == "${aPID}" ) && ( ( -z $( h "2" "-2" ) || $( h "2" "-2" ) == "${aPID}" ) || ( -z $( h "-4" "-2" ) || $( h "-4" "-2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "-1" ) && $( h "-1" "-2" ) == "${aPID}" && $( h "-2" "-2" ) == "${aPID}" ]]; then debug "o17.0.1";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && -z $( h "-1" "-2" ) && $( h "-2" "-2" ) == "${aPID}" ]]; then debug "o17.0.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && $( h "-1" "-2" ) == "${aPID}" && -z $( h "-2" "-2" ) ]]; then debug "o17.0.3";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-3" "1" ) || $( h "-3" "1" ) == "${aPID}" ) && ( -z $( h "1" "-3" ) || $( h "1" "-3" ) == "${aPID}" ) && ( ( -z $( h "2" "-4" ) || $( h "2" "-4" ) == "${aPID}" ) || ( -z $( h "-4" "2" ) || $( h "-4" "2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "-1" ) && $( h "-1" "-1" ) == "${aPID}" && $( h "-2" "0" ) == "${aPID}" ]]; then debug "o18.0.1";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && -z $( h "-1" "-1" ) && $( h "-2" "0" ) == "${aPID}" ]]; then debug "o18.0.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "0" "-1" ) == "${aPID}" && $( h "-1" "-1" ) == "${aPID}" && -z $( h "-2" "0" ) ]]; then debug "o18.0.3";
+				nHX=$(( aX - 2 ))
+				nHY="${aY}"
+				nextNextHit="${aX}|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+	fi
+	
+	if [[ ( -z $( h "0" "-1" ) || $( h "0" "-1" ) == "${aPID}" ) && ( -z $( h "0" "2" ) || $( h "0" "2" ) == "${aPID}" ) && ( -z $( h "0" "-2" ) || $( h "0" "-2" ) == "${aPID}" ) && ( ( -z $( h "0" "-3" ) || $( h "0" "-3" ) == "${aPID}" ) || ( -z $( h "0" "3" ) || $( h "0" "3" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "3" "2" ) || $( h "3" "2" ) == "${aPID}" ) && ( -z $( h "-1" "-2" ) || $( h "-1" "-2" ) == "${aPID}" ) && ( ( -z $( h "-2" "-3" ) || $( h "-2" "-3" ) == "${aPID}" ) || ( -z $( h "4" "3" ) || $( h "4" "3" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "1" ) && $( h "1" "0" ) == "${aPID}" && $( h "2" "1" ) == "${aPID}" ]]; then debug "o12.1.0";
+				nHX="${aX}"
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && -z $( h "1" "0" ) && $( h "2" "1" ) == "${aPID}" ]]; then debug "o12.1.2";
+				nHX=$(( aX + 1 ))
+				nHY="${aY}"
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && $( h "1" "0" ) == "${aPID}" && -z $( h "2" "1" ) ]]; then debug "o12.1.3";
+				nHX=$(( aX + 2 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		
+		if [[ ( -z $( h "3" "-1" ) || $( h "3" "-1" ) == "${aPID}" ) && ( -z $( h "-1" "-1" ) || $( h "-1" "-1" ) == "${aPID}" ) && ( ( -z $( h "-2" "-1" ) || $( h "-2" "-1" ) == "${aPID}" ) || ( -z $( h "4" "-1" ) || $( h "4" "-1" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "1" ) && $( h "1" "-1" ) == "${aPID}" && $( h "2" "-1" ) == "${aPID}" ]]; then debug "o13.1.0";
+				nHX="${aX}"
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && -z $( h "1" "-1" ) && $( h "2" "-1" ) == "${aPID}" ]]; then debug "o13.1.2";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && $( h "1" "-1" ) == "${aPID}" && -z $( h "2" "-1" ) ]]; then debug "o13.1.3";
+				nHX=$(( aX + 2 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		
+		if [[ ( -z $( h "3" "-4" ) || $( h "3" "-4" ) == "${aPID}" ) && ( -z $( h "-1" "0" ) || $( h "-1" "0" ) == "${aPID}" ) && ( ( -z $( h "-2" "1" ) || $( h "-2" "1" ) == "${aPID}" ) || ( -z $( h "4" "-5" ) || $( h "4" "-5" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "1" ) && $( h "1" "-2" ) == "${aPID}" && $( h "2" "-3" ) == "${aPID}" ]]; then debug "o14.1.0";
+				nHX="${aX}"
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && -z $( h "1" "-2" ) && $( h "2" "-3" ) == "${aPID}" ]]; then debug "o14.1.2";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && $( h "1" "-2" ) == "${aPID}" && -z $( h "2" "-3" ) ]]; then debug "o14.1.3";
+				nHX=$(( aX + 2 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-3" "-4" ) || $( h "-3" "-4" ) == "${aPID}" ) && ( -z $( h "1" "0" ) || $( h "1" "0" ) == "${aPID}" ) && ( ( -z $( h "2" "1" ) || $( h "2" "1" ) == "${aPID}" ) || ( -z $( h "-4" "-5" ) || $( h "-4" "-5" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "1" ) && $( h "-1" "-2" ) == "${aPID}" && $( h "-2" "-3" ) == "${aPID}" ]]; then debug "o16.1.0";
+				nHX="${aX}"
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && -z $( h "-1" "-2" ) && $( h "-2" "-3" ) == "${aPID}" ]]; then debug "o16.1.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && $( h "-1" "-2" ) == "${aPID}" && -z $( h "-2" "-3" ) ]]; then debug "o16.1.3";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-3" "-1" ) || $( h "-3" "-1" ) == "${aPID}" ) && ( -z $( h "1" "-1" ) || $( h "1" "-1" ) == "${aPID}" ) && ( ( -z $( h "2" "-1" ) || $( h "2" "-1" ) == "${aPID}" ) || ( -z $( h "-4" "-1" ) || $( h "-4" "-1" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "1" ) && $( h "-1" "-1" ) == "${aPID}" && $( h "-2" "-1" ) == "${aPID}" ]]; then debug "o17.1.0";
+				nHX="${aX}"
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && -z $( h "-1" "-1" ) && $( h "-2" "-1" ) == "${aPID}" ]]; then debug "o17.1.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && $( h "-1" "-1" ) == "${aPID}" && -z $( h "-2" "-1" ) ]]; then debug "o17.1.3";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-3" "2" ) || $( h "-3" "2" ) == "${aPID}" ) && ( -z $( h "1" "-2" ) || $( h "1" "-2" ) == "${aPID}" ) && ( ( -z $( h "2" "-3" ) || $( h "2" "-3" ) == "${aPID}" ) || ( -z $( h "-4" "3" ) || $( h "-4" "3" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "0" "1" ) && $( h "-1" "0" ) == "${aPID}" && $( h "-2" "1" ) == "${aPID}" ]]; then debug "o18.1.0";
+				nHX="${aX}"
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && -z $( h "-1" "0" ) && $( h "-2" "1" ) == "${aPID}" ]]; then debug "o18.1.2";
+				nHX=$(( aX - 1 ))
+				nHY="${aY}"
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "0" "1" ) == "${aPID}" && $( h "-1" "0" ) == "${aPID}" && -z $( h "-2" "1" ) ]]; then debug "o18.1.3";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="${aX}|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+	fi
+	
+	if [[ ( -z $( h "-2" "-2" ) || $( h "-2" "-2" ) == "${aPID}" ) && ( -z $( h "1" "1" ) || $( h "1" "1" ) == "${aPID}" ) && ( -z $( h "-3" "-3" ) || $( h "-3" "-3" ) == "${aPID}" ) && ( ( -z $( h "-4" "-4" ) || $( h "-4" "-4" ) == "${aPID}" ) || ( -z $( h "2" "2" ) || $( h "2" "2" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "1" "-2" ) || $( h "1" "-2" ) == "${aPID}" ) && ( -z $( h "-3" "-2" ) || $( h "-3" "-2" ) == "${aPID}" ) && ( ( -z $( h "-4" "-2" ) || $( h "-4" "-2" ) == "${aPID}" ) || ( -z $( h "2" "-2" ) || $( h "2" "-2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "-1" ) && $( h "-1" "-2" ) == "${aPID}" && $( h "0" "-2" ) == "${aPID}" ]]; then debug "o23.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && -z $( h "-1" "-2" ) && $( h "0" "-2" ) == "${aPID}" ]]; then debug "o23.0.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && $( h "-1" "-2" ) == "${aPID}" && -z $( h "0" "-2" ) ]]; then debug "o23.0.3";
+				nHX="${aX}"
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "1" "-5" ) || $( h "1" "-5" ) == "${aPID}" ) && ( -z $( h "-3" "-1" ) || $( h "-3" "-1" ) == "${aPID}" ) && ( ( -z $( h "-4" "0" ) || $( h "-4" "0" ) == "${aPID}" ) || ( -z $( h "2" "-6" ) || $( h "2" "-6" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "-1" ) && $( h "-1" "-3" ) == "${aPID}" && $( h "0" "-4" ) == "${aPID}" ]]; then debug "o24.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && -z $( h "-1" "-3" ) && $( h "0" "-4" ) == "${aPID}" ]]; then debug "o24.0.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && $( h "-1" "-3" ) == "${aPID}" && -z $( h "0" "-4" ) ]]; then debug "o24.0.3";
+				nHX="${aX}"
+				nHY=$(( aY - 4 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-2" "-5" ) || $( h "-2" "-5" ) == "${aPID}" ) && ( -z $( h "-2" "-1" ) || $( h "-2" "-1" ) == "${aPID}" ) && ( ( -z $( h "-2" "0" ) || $( h "-2" "0" ) == "${aPID}" ) || ( -z $( h "-2" "-6" ) || $( h "-2" "-6" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "-1" ) && $( h "-2" "-3" ) == "${aPID}" && $( h "-2" "-4" ) == "${aPID}" ]]; then debug "o25.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && -z $( h "-2" "-3" ) && $( h "-2" "-4" ) == "${aPID}" ]]; then debug "o25.0.2";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && $( h "-2" "-3" ) == "${aPID}" && -z $( h "-2" "-4" ) ]]; then debug "o25.0.3";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 4 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-5" "-2" ) || $( h "-5" "-2" ) == "${aPID}" ) && ( -z $( h "-1" "-2" ) || $( h "-1" "-2" ) == "${aPID}" ) && ( ( -z $( h "0" "-2" ) || $( h "0" "-2" ) == "${aPID}" ) || ( -z $( h "-6" "-2" ) || $( h "-6" "-2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "-1" ) && $( h "-3" "-2" ) == "${aPID}" && $( h "-4" "-2" ) == "${aPID}" ]]; then debug "o27.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && -z $( h "-3" "-2" ) && $( h "-4" "-2" ) == "${aPID}" ]]; then debug "o27.0.2";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && $( h "-3" "-2" ) == "${aPID}" && -z $( h "-4" "-2" ) ]]; then debug "o27.0.3";
+				nHX=$(( aX - 4 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-5" "1" ) || $( h "-5" "1" ) == "${aPID}" ) && ( -z $( h "-1" "-3" ) || $( h "-1" "-3" ) == "${aPID}" ) && ( ( -z $( h "0" "-4" ) || $( h "0" "-4" ) == "${aPID}" ) || ( -z $( h "-6" "2" ) || $( h "-6" "2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "-1" ) && $( h "-3" "-1" ) == "${aPID}" && $( h "-4" "0" ) == "${aPID}" ]]; then debug "o28.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && -z $( h "-3" "-1" ) && $( h "-4" "0" ) == "${aPID}" ]]; then debug "o28.0.2";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "-1" ) == "${aPID}" && $( h "-3" "-1" ) == "${aPID}" && -z $( h "-4" "0" ) ]]; then debug "o28.0.3";
+				nHX=$(( aX - 4 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 2 ))|$(( aY - 2 ))"
+				return 0
+			fi
+		fi
+	fi
+	
+	if [[ ( -z $( h "-1" "-1" ) || $( h "-1" "-1" ) == "${aPID}" ) && ( -z $( h "2" "2" ) || $( h "2" "2" ) == "${aPID}" ) && ( -z $( h "-2" "-2" ) || $( h "-2" "-2" ) == "${aPID}" ) && ( ( -z $( h "-3" "-3" ) || $( h "-3" "-3" ) == "${aPID}" ) || ( -z $( h "3" "3" ) || $( h "3" "3" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "2" "-1" ) || $( h "2" "-1" ) == "${aPID}" ) && ( -z $( h "-2" "-1" ) || $( h "-2" "-1" ) == "${aPID}" ) && ( ( -z $( h "-3" "-1" ) || $( h "-3" "-1" ) == "${aPID}" ) || ( -z $( h "3" "-1" ) || $( h "3" "-1" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "1" ) && $( h "0" "-1" ) == "${aPID}" && $( h "1" "-1" ) == "${aPID}" ]]; then debug "o23.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && -z $( h "0" "-1" ) && $( h "1" "-1" ) == "${aPID}" ]]; then debug "o23.1.2";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && $( h "0" "-1" ) == "${aPID}" && -z $( h "1" "-1" ) ]]; then debug "o23.1.3";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "2" "-4" ) || $( h "2" "-4" ) == "${aPID}" ) && ( -z $( h "-2" "0" ) || $( h "-2" "0" ) == "${aPID}" ) && ( ( -z $( h "-3" "1" ) || $( h "-3" "1" ) == "${aPID}" ) || ( -z $( h "3" "-5" ) || $( h "3" "-5" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "1" ) && $( h "0" "-2" ) == "${aPID}" && $( h "1" "-3" ) == "${aPID}" ]]; then debug "o24.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && -z $( h "0" "-2" ) && $( h "1" "-3" ) == "${aPID}" ]]; then debug "o24.1.2";
+				nHX="${aX}"
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && $( h "0" "-2" ) == "${aPID}" && -z $( h "1" "-3" ) ]]; then debug "o24.1.3";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-1" "-4" ) || $( h "-1" "-4" ) == "${aPID}" ) && ( -z $( h "-1" "0" ) || $( h "-1" "0" ) == "${aPID}" ) && ( ( -z $( h "-1" "1" ) || $( h "-1" "1" ) == "${aPID}" ) || ( -z $( h "-1" "-5" ) || $( h "-1" "-5" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "1" ) && $( h "-1" "-2" ) == "${aPID}" && $( h "-1" "-3" ) == "${aPID}" ]]; then debug "o25.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && -z $( h "-1" "-2" ) && $( h "-1" "-3" ) == "${aPID}" ]]; then debug "o25.1.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && $( h "-1" "-2" ) == "${aPID}" && -z $( h "-1" "-3" ) ]]; then debug "o25.1.3";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 3 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-4" "-1" ) || $( h "-4" "-1" ) == "${aPID}" ) && ( -z $( h "0" "-1" ) || $( h "0" "-1" ) == "${aPID}" ) && ( ( -z $( h "1" "-1" ) || $( h "1" "-1" ) == "${aPID}" ) || ( -z $( h "-5" "-1" ) || $( h "-5" "-1" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "1" ) && $( h "-2" "-1" ) == "${aPID}" && $( h "-3" "-1" ) == "${aPID}" ]]; then debug "o27.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && -z $( h "-2" "-1" ) && $( h "-3" "-1" ) == "${aPID}" ]]; then debug "o27.1.2";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && $( h "-2" "-1" ) == "${aPID}" && -z $( h "-3" "-1" ) ]]; then debug "o27.1.3";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-4" "2" ) || $( h "-4" "2" ) == "${aPID}" ) && ( -z $( h "0" "-2" ) || $( h "0" "-2" ) == "${aPID}" ) && ( ( -z $( h "1" "-2" ) || $( h "1" "-2" ) == "${aPID}" ) || ( -z $( h "-5" "3" ) || $( h "-5" "3" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "1" ) && $( h "-2" "0" ) == "${aPID}" && $( h "-3" "1" ) == "${aPID}" ]]; then debug "o28.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && -z $( h "-2" "0" ) && $( h "-3" "1" ) == "${aPID}" ]]; then debug "o28.1.2";
+				nHX=$(( aX - 2 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "1" ) == "${aPID}" && $( h "-2" "0" ) == "${aPID}" && -z $( h "-3" "1" ) ]]; then debug "o28.1.3";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY - 1 ))"
+				return 0
+			fi
+		fi
+	fi
+	
+	if [[ ( -z $( h "-2" "0" ) || $( h "-2" "0" ) == "${aPID}" ) && ( -z $( h "1" "0" ) || $( h "1" "0" ) == "${aPID}" ) && ( -z $( h "-3" "0" ) || $( h "-3" "0" ) == "${aPID}" ) && ( ( -z $( h "-4" "0" ) || $( h "-4" "0" ) == "${aPID}" ) || ( -z $( h "2" "0" ) || $( h "2" "0" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "1" "-3" ) || $( h "1" "-3" ) == "${aPID}" ) && ( -z $( h "-3" "1" ) || $( h "-3" "1" ) == "${aPID}" ) && ( ( -z $( h "-4" "2" ) || $( h "-4" "2" ) == "${aPID}" ) || ( -z $( h "2" "-4" ) || $( h "2" "-4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "0" ) && $( h "-1" "-1" ) == "${aPID}" && $( h "0" "-2" ) == "${aPID}" ]]; then debug "o34.0.1";
+				nHX=$(( aX - 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && -z $( h "-1" "-1" ) && $( h "0" "-2" ) == "${aPID}" ]]; then debug "o34.0.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && $( h "-1" "-1" ) == "${aPID}" && -z $( h "0" "-2" ) ]]; then debug "o34.0.3";
+				nHX="${aX}"
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-2" "-3" ) || $( h "-2" "-3" ) == "${aPID}" ) && ( -z $( h "-2" "1" ) || $( h "-2" "1" ) == "${aPID}" ) && ( ( -z $( h "2" "2" ) || $( h "2" "2" ) == "${aPID}" ) || ( -z $( h "-2" "-4" ) || $( h "-2" "-4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "0" ) && $( h "-2" "-1" ) == "${aPID}" && $( h "-2" "-2" ) == "${aPID}" ]]; then debug "o35.0.1";
+				nHX=$(( aX - 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && -z $( h "-2" "-1" ) && $( h "-2" "-2" ) == "${aPID}" ]]; then debug "o35.0.2";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && $( h "-2" "-1" ) == "${aPID}" && -z $( h "-2" "-2" ) ]]; then debug "o35.0.3";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-5" "-3" ) || $( h "-5" "-3" ) == "${aPID}" ) && ( -z $( h "-1" "1" ) || $( h "-1" "1" ) == "${aPID}" ) && ( ( -z $( h "0" "2" ) || $( h "0" "2" ) == "${aPID}" ) || ( -z $( h "-6" "-4" ) || $( h "-6" "-4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "0" ) && $( h "-3" "-1" ) == "${aPID}" && $( h "-4" "-2" ) == "${aPID}" ]]; then debug "o36.0.1";
+				nHX=$(( aX - 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && -z $( h "-3" "-1" ) && $( h "-4" "-2" ) == "${aPID}" ]]; then debug "o36.0.2";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && $( h "-3" "-1" ) == "${aPID}" && -z $( h "-4" "-2" ) ]]; then debug "o36.0.3";
+				nHX=$(( aX - 4 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-5" "3" ) || $( h "-5" "3" ) == "${aPID}" ) && ( -z $( h "-1" "-1" ) || $( h "-1" "-1" ) == "${aPID}" ) && ( ( -z $( h "0" "-2" ) || $( h "0" "-2" ) == "${aPID}" ) || ( -z $( h "-6" "4" ) || $( h "-6" "4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "0" ) && $( h "-3" "1" ) == "${aPID}" && $( h "-4" "2" ) == "${aPID}" ]]; then debug "o38.0.1";
+				nHX=$(( aX - 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && -z $( h "-3" "1" ) && $( h "-4" "2" ) == "${aPID}" ]]; then debug "o38.0.2";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && $( h "-3" "1" ) == "${aPID}" && -z $( h "-4" "2" ) ]]; then debug "o38.0.3";
+				nHX=$(( aX - 4 ))
+				nHY=$(( aY + 2 ))
+				nextNextHit="$(( aX - 2 ))|${aY}"
+				return 0
+			fi
+		fi
+	fi
+	
+	if [[ ( -z $( h "-1" "0" ) || $( h "-1" "0" ) == "${aPID}" ) && ( -z $( h "2" "0" ) || $( h "2" "0" ) == "${aPID}" ) && ( -z $( h "-2" "0" ) || $( h "-2" "0" ) == "${aPID}" ) && ( ( -z $( h "-3" "0" ) || $( h "-3" "0" ) == "${aPID}" ) || ( -z $( h "3" "0" ) || $( h "3" "0" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "2" "-3" ) || $( h "2" "-3" ) == "${aPID}" ) && ( -z $( h "-2" "1" ) || $( h "-2" "1" ) == "${aPID}" ) && ( ( -z $( h "-3" "2" ) || $( h "-3" "2" ) == "${aPID}" ) || ( -z $( h "3" "-4" ) || $( h "3" "-4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "0" ) && $( h "0" "-1" ) == "${aPID}" && $( h "1" "-2" ) == "${aPID}" ]]; then debug "o34.1.0";
+				nHX=$(( aX + 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && -z $( h "0" "-1" ) && $( h "1" "-2" ) == "${aPID}" ]]; then debug "o34.1.2";
+				nHX="${aX}"
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && $( h "0" "-1" ) == "${aPID}" && -z $( h "1" "-2" ) ]]; then debug "o34.1.3";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-1" "-3" ) || $( h "-1" "-3" ) == "${aPID}" ) && ( -z $( h "-1" "1" ) || $( h "-1" "1" ) == "${aPID}" ) && ( ( -z $( h "-1" "2" ) || $( h "-1" "2" ) == "${aPID}" ) || ( -z $( h "-1" "-4" ) || $( h "-1" "-4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "0" ) && $( h "-1" "-1" ) == "${aPID}" && $( h "-1" "-2" ) == "${aPID}" ]]; then debug "o35.1.0";
+				nHX=$(( aX + 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && -z $( h "-1" "-1" ) && $( h "-1" "-2" ) == "${aPID}" ]]; then debug "o35.1.2";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && $( h "-1" "-1" ) == "${aPID}" && -z $( h "-1" "-2" ) ]]; then debug "o35.1.3";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-4" "-3" ) || $( h "-4" "-3" ) == "${aPID}" ) && ( -z $( h "0" "1" ) || $( h "0" "1" ) == "${aPID}" ) && ( ( -z $( h "1" "2" ) || $( h "1" "2" ) == "${aPID}" ) || ( -z $( h "-5" "-4" ) || $( h "-5" "-4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "0" ) && $( h "-2" "-1" ) == "${aPID}" && $( h "-3" "-2" ) == "${aPID}" ]]; then debug "o36.1.0";
+				nHX=$(( aX + 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && -z $( h "-2" "-1" ) && $( h "-3" "-2" ) == "${aPID}" ]]; then debug "o36.1.2";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && $( h "-2" "-1" ) == "${aPID}" && -z $( h "-3" "-2" ) ]]; then debug "o36.1.3";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY - 2 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-4" "3" ) || $( h "-4" "3" ) == "${aPID}" ) && ( -z $( h "0" "-1" ) || $( h "0" "-1" ) == "${aPID}" ) && ( ( -z $( h "1" "-2" ) || $( h "1" "-2" ) == "${aPID}" ) || ( -z $( h "-5" "4" ) || $( h "-5" "4" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "0" ) && $( h "-2" "1" ) == "${aPID}" && $( h "-3" "2" ) == "${aPID}" ]]; then debug "o38.1.0";
+				nHX=$(( aX + 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && -z $( h "-2" "1" ) && $( h "-3" "2" ) == "${aPID}" ]]; then debug "o38.1.2";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+			if [[ $( h "1" "0" ) == "${aPID}" && $( h "-2" "1" ) == "${aPID}" && -z $( h "-3" "2" ) ]]; then debug "o38.1.3";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY + 2 ))
+				nextNextHit="$(( aX - 1 ))|${aY}"
+				return 0
+			fi
+		fi
+	fi
+	if [[ ( -z $( h "-2" "2" ) || $( h "-2" "2" ) == "${aPID}" ) && ( -z $( h "1" "-1" ) || $( h "1" "-1" ) == "${aPID}" ) && ( -z $( h "-3" "3" ) || $( h "-3" "3" ) == "${aPID}" ) && ( ( -z $( h "-4" "4" ) || $( h "-4" "4" ) == "${aPID}" ) || ( -z $( h "2" "-2" ) || $( h "2" "-2" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "-2" "-1" ) || $( h "-2" "-1" ) == "${aPID}" ) && ( -z $( h "-2" "3" ) || $( h "-2" "3" ) == "${aPID}" ) && ( ( -z $( h "-2" "4" ) || $( h "-2" "4" ) == "${aPID}" ) || ( -z $( h "-2" "-2" ) || $( h "-2" "-2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "1" ) && $( h "-2" "1" ) == "${aPID}" && $( h "-2" "0" ) == "${aPID}" ]]; then debug "o45.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "1" ) == "${aPID}" && -z $( h "-2" "1" ) && $( h "-2" "0" ) == "${aPID}" ]]; then debug "o45.0.2";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && $( h "-2" "1" ) == "${aPID}" && -z $( h "-2" "0" ) ]]; then debug "o45.0.3";
+				nHX=$(( aX - 2 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-5" "-1" ) || $( h "-5" "-1" ) == "${aPID}" ) && ( -z $( h "-1" "3" ) || $( h "-1" "3" ) == "${aPID}" ) && ( ( -z $( h "0" "4" ) || $( h "0" "4" ) == "${aPID}" ) || ( -z $( h "-6" "-2" ) || $( h "-6" "-2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "1" ) && $( h "-3" "1" ) == "${aPID}" && $( h "-4" "0" ) == "${aPID}" ]]; then debug "o46.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "1" ) == "${aPID}" && -z $( h "-3" "1" ) && $( h "-4" "0" ) == "${aPID}" ]]; then debug "o46.0.2";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && $( h "-3" "1" ) == "${aPID}" && -z $( h "-4" "0" ) ]]; then debug "o46.0.3";
+				nHX=$(( aX - 4 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-5" "2" ) || $( h "-5" "2" ) == "${aPID}" ) && ( -z $( h "-1" "2" ) || $( h "-1" "2" ) == "${aPID}" ) && ( ( -z $( h "0" "2" ) || $( h "0" "2" ) == "${aPID}" ) || ( -z $( h "-6" "2" ) || $( h "-6" "2" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "-1" "1" ) && $( h "-3" "2" ) == "${aPID}" && $( h "-4" "2" ) == "${aPID}" ]]; then debug "o47.0.1";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "1" ) == "${aPID}" && -z $( h "-3" "2" ) && $( h "-4" "2" ) == "${aPID}" ]]; then debug "o47.0.2";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY + 2 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+			if [[ $( h "-1" "0" ) == "${aPID}" && $( h "-3" "2" ) == "${aPID}" && -z $( h "-4" "2" ) ]]; then debug "o47.0.3";
+				nHX=$(( aX - 4 ))
+				nHY=$(( aY + 2 ))
+				nextNextHit="$(( aX - 2 ))|$(( aY + 2 ))"
+				return 0
+			fi
+		fi
+	fi
+	if [[ ( -z $( h "-1" "1" ) || $( h "-1" "1" ) == "${aPID}" ) && ( -z $( h "2" "-2" ) || $( h "2" "-2" ) == "${aPID}" ) && ( -z $( h "-2" "2" ) || $( h "-2" "2" ) == "${aPID}" ) && ( ( -z $( h "-3" "3" ) || $( h "-3" "3" ) == "${aPID}" ) || ( -z $( h "3" "-3" ) || $( h "3" "-3" ) == "${aPID}" ) ) ]]
+	then
+		if [[ ( -z $( h "-1" "-2" ) || $( h "-1" "-2" ) == "${aPID}" ) && ( -z $( h "-1" "2" ) || $( h "-1" "2" ) == "${aPID}" ) && ( ( -z $( h "-1" "3" ) || $( h "-1" "3" ) == "${aPID}" ) || ( -z $( h "-1" "-3" ) || $( h "-1" "-3" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "-1" ) && $( h "-1" "0" ) == "${aPID}" && $( h "-1" "-1" ) == "${aPID}" ]]; then debug "o45.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "-1" ) == "${aPID}" && -z $( h "-1" "0" ) && $( h "-1" "-1" ) == "${aPID}" ]]; then debug "o45.1.2";
+				nHX=$(( aX - 1 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "-1" ) == "${aPID}" && $( h "-1" "0" ) == "${aPID}" && -z $( h "-1" "-1" ) ]]; then debug "o45.1.3";
+				nHX=$(( aX - 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-4" "-2" ) || $( h "-4" "-2" ) == "${aPID}" ) && ( -z $( h "0" "2" ) || $( h "0" "2" ) == "${aPID}" ) && ( ( -z $( h "1" "3" ) || $( h "1" "3" ) == "${aPID}" ) || ( -z $( h "-5" "-3" ) || $( h "-5" "-3" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "-1" ) && $( h "-2" "0" ) == "${aPID}" && $( h "-3" "-1" ) == "${aPID}" ]]; then debug "o46.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "-1" ) == "${aPID}" && -z $( h "-2" "0" ) && $( h "-3" "-1" ) == "${aPID}" ]]; then debug "o46.1.2";
+				nHX=$(( aX - 2 ))
+				nHY="${aY}"
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "-1" ) == "${aPID}" && $( h "-2" "0" ) == "${aPID}" && -z $( h "-3" "-1" ) ]]; then debug "o46.1.3";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+		fi
+		if [[ ( -z $( h "-4" "1" ) || $( h "-4" "1" ) == "${aPID}" ) && ( -z $( h "0" "1" ) || $( h "0" "1" ) == "${aPID}" ) && ( ( -z $( h "1" "1" ) || $( h "1" "1" ) == "${aPID}" ) || ( -z $( h "-5" "1" ) || $( h "-5" "1" ) == "${aPID}" ) ) ]]
+		then
+			if [[ -z $( h "1" "-1" ) && $( h "-2" "1" ) == "${aPID}" && $( h "-3" "1" ) == "${aPID}" ]]; then debug "o47.1.0";
+				nHX=$(( aX + 1 ))
+				nHY=$(( aY - 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "-1" ) == "${aPID}" && -z $( h "-2" "1" ) && $( h "-3" "1" ) == "${aPID}" ]]; then debug "o47.1.2";
+				nHX=$(( aX - 2 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+			if [[ $( h "1" "-1" ) == "${aPID}" && $( h "-2" "1" ) == "${aPID}" && -z $( h "-3" "1" ) ]]; then debug "o47.1.3";
+				nHX=$(( aX - 3 ))
+				nHY=$(( aY + 1 ))
+				nextNextHit="$(( aX - 1 ))|$(( aY + 1 ))"
+				return 0
+			fi
+		fi
+	fi
+	return 5
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function threatHard {
 	selfHit=0
