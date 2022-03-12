@@ -11,7 +11,7 @@ declare -r tmpFolder="/tmp"
 declare -r maxX=28
 declare -r minX=-28
 declare -r maxY=20
-declare -r minY=-19
+declare -r minY=-20
 
 declare -a field # x|y|pID|done0|done1|done2|done3
 declare -a nextHits # x|y|pID|done0|done1|done2|done3
